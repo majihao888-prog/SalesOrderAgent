@@ -1,0 +1,8 @@
+{
+    "project_name": "SalesOrderAgent",
+    "version": "0.1.0",
+    "log_level": "INFO",
+    "supported_extensions": [
+        ".pdf"
+    ]
+}
