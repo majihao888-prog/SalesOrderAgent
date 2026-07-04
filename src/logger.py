@@ -1,57 +1,58 @@
 """
 logger.py
-统一日志模块
-
-整个项目统一调用：
-    from logger import get_logger
-
-    logger = get_logger(__name__)
-    logger.info("message")
+Logging module for SalesOrderAgent
 """
 
-from pathlib import Path
-import logging
+from __future__ import annotations
 
-from config import LOG_DIR
+import logging
+from logging.handlers import RotatingFileHandler
+
+from app_config import LOG_DIR, SETTINGS
+
+
+LOG_FILE = LOG_DIR / "SalesOrderAgent.log"
 
 
 def get_logger(name: str = "SalesOrderAgent") -> logging.Logger:
     """
-    创建并返回 Logger
-
-    Args:
-        name: Logger名称
-
-    Returns:
-        logging.Logger
+    Create and return a singleton logger.
     """
-
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
 
     logger = logging.getLogger(name)
 
-    # 防止重复添加 Handler
     if logger.handlers:
         return logger
 
-    logger.setLevel(logging.INFO)
+    level_name = SETTINGS.get("log_level", "INFO").upper()
+    level = getattr(logging, level_name, logging.INFO)
+
+    logger.setLevel(level)
 
     formatter = logging.Formatter(
         fmt="%(asctime)s | %(levelname)-8s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    file_handler = logging.FileHandler(
-        LOG_DIR / "sales_order.log",
+    # File Handler
+    file_handler = RotatingFileHandler(
+        filename=LOG_FILE,
+        maxBytes=5 * 1024 * 1024,
+        backupCount=5,
         encoding="utf-8",
     )
-
-    console_handler = logging.StreamHandler()
-
     file_handler.setFormatter(formatter)
+
+    # Console Handler
+    console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
 
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
 
+    logger.propagate = False
+
     return logger
+
+
+logger = get_logger()
