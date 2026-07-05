@@ -1,4 +1,6 @@
 from .atb_parser import ATBParser
+from .worldwide_parser import WorldWideParser
+from .wolong_america_parser import WolongAmericaParser
 
 
 class ParserFactory:
@@ -8,9 +10,15 @@ class ParserFactory:
 
         customer = customer.upper()
 
-        if customer == "ATB":
-            return ATBParser()
+        parsers = {
+            "ATB": ATBParser,
+            "WORLDWIDE": WorldWideParser,
+            "WOLONG_AMERICA": WolongAmericaParser,
+        }
 
-        raise ValueError(
-            f"No parser for {customer}"
-        )
+        parser = parsers.get(customer)
+
+        if parser is None:
+            raise ValueError(f"No parser for customer: {customer}")
+
+        return parser()

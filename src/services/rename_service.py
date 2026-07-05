@@ -1,41 +1,81 @@
 """
-Rename PDF by PO Number
+Rename PDF Service
 """
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
+from app_config import ARCHIVE_DIR
+from models import SalesOrder
 from logger import logger
 
 
 class RenameService:
 
-    @staticmethod
-    def rename(pdf: Path, po_no: str) -> Path:
+    def rename(
+        self,
+        pdf: Path,
+        order: SalesOrder,
+    ) -> Path:
+        """
+        Rename and move PDF to archive.
 
-        if not po_no:
-            logger.warning("PO Number empty.")
-            return pdf
+        archive/
+            2026/
+                ATB/
+                    ATB_B72175221.pdf
+        """
 
-        target = pdf.with_name(f"{po_no}.pdf")
+        # 年份
+        year = "UNKNOWN"
 
-        index = 2
+        if order.order_date:
 
-        while target.exists():
+            try:
+                year = order.order_date.split(".")[-1]
+            except Exception:
+                pass
 
-            target = pdf.with_name(
-                f"{po_no}_{index}.pdf"
+        # 客户
+        customer = order.customer or "UNKNOWN"
+
+        # PO
+        po = order.po_no or pdf.stem
+
+        target_dir = (
+            ARCHIVE_DIR
+            / year
+            / customer
+        )
+
+        target_dir.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        target_file = target_dir / f"{customer}_{po}.pdf"
+
+        # 如果重名
+        index = 1
+
+        while target_file.exists():
+
+            target_file = (
+                target_dir
+                / f"{customer}_{po}_{index}.pdf"
             )
 
             index += 1
 
-        pdf.rename(target)
-
-        logger.info(
-            "Rename: %s -> %s",
-            pdf.name,
-            target.name,
+        shutil.move(
+            str(pdf),
+            str(target_file),
         )
 
-        return target
+        logger.info(
+            f"Rename -> {target_file.name}"
+        )
+
+        return target_file

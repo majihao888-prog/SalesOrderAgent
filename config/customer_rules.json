@@ -1,0 +1,6 @@
+{
+    "ABB": ["ABB", "Purchase Order"],
+    "Siemens": ["SIEMENS", "Order Reference"],
+    "WorldWide Electric Corp. LLC": ["WWEC", "World Wide Electric"],
+    "WOLONG ELECTRIC AMERICA LLC": ["WOLONG", "Electric America"]
+}

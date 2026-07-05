@@ -1,106 +1,150 @@
 """
-Order Summary Service
+Summary Excel Service
 """
 
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
+from datetime import datetime
 
 from openpyxl import Workbook, load_workbook
 
 from app_config import OUTPUT_DIR
-from logger import logger
 from models import SalesOrder
-
-
-SUMMARY_FILE = OUTPUT_DIR / "OrderSummary.xlsx"
 
 
 class SummaryService:
 
-    def __init__(self):
+    HEADERS = [
 
-        self.file = SUMMARY_FILE
+        "Customer",
+        "PO",
 
-        if not self.file.exists():
-            self.create_workbook()
+        "Order Date",
+        "Currency",
 
-    def create_workbook(self):
+        "Material",
+        "Description",
 
-        wb = Workbook()
+        "Qty",
+        "Unit",
 
-        ws = wb.active
-        ws.title = "Orders"
+        "Unit Price",
+        "Amount",
 
-        ws.append([
-            "PO",
-            "Customer",
-            "OrderDate",
-            "Currency",
-            "PDF",
-            "ImportTime",
-            "FileHash"
-        ])
+        "Delivery Date",
 
-        item_ws = wb.create_sheet("Items")
+        "Status",
 
-        item_ws.append([
-            "PO",
-            "Line",
-            "Material",
-            "Description",
-            "Qty",
-            "Unit",
-            "Price",
-            "Amount",
-            "DeliveryDate"
-        ])
+        "PDF",
 
-        wb.save(self.file)
+        "Process Time",
+    ]
 
-        logger.info("Create OrderSummary.xlsx")
-
-    def append_order(
+    def append(
         self,
         order: SalesOrder,
-        pdf_name: str,
-        file_hash: str = "",
-    ):
+        pdf: Path,
+    ) -> None:
 
-        wb = load_workbook(self.file)
+        year = "UNKNOWN"
 
-        ws = wb["Orders"]
+        if order.order_date:
 
-        ws.append([
-            order.po_no,
-            order.customer,
-            order.order_date,
-            order.currency,
-            pdf_name,
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            file_hash
-        ])
+            try:
 
-        item_ws = wb["Items"]
+                year = order.order_date.split(".")[-1]
 
-        for index, item in enumerate(order.items, start=1):
+            except Exception:
 
-            item_ws.append([
+                pass
+
+        summary_dir = OUTPUT_DIR / "summary"
+
+        summary_dir.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        excel = summary_dir / f"{year}.xlsx"
+
+        # ----------------------------
+        # Create workbook
+        # ----------------------------
+
+        if excel.exists():
+
+            wb = load_workbook(excel)
+
+            ws = wb.active
+
+        else:
+
+            wb = Workbook()
+
+            ws = wb.active
+
+            ws.title = year
+
+            ws.append(self.HEADERS)
+
+        # ----------------------------
+        # Write Items
+        # ----------------------------
+
+        if not order.items:
+
+            ws.append([
+                order.customer,
                 order.po_no,
-                index,
-                item.material_no,
-                item.description,
-                item.quantity,
-                item.unit,
-                item.unit_price,
-                item.amount,
-                item.delivery_date
+                order.order_date,
+                order.currency,
+                "",
+                "",
+                "",
+                "",
+                "",
+                order.total_amount,
+                "",
+                "SUCCESS",
+                pdf.name,
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             ])
 
-        wb.save(self.file)
+        else:
 
-        logger.info(
-            "Order %s saved.",
-            order.po_no,
-        )
+            for item in order.items:
+
+                ws.append([
+
+                    order.customer,
+
+                    order.po_no,
+
+                    order.order_date,
+
+                    order.currency,
+
+                    item.material_no,
+
+                    item.description,
+
+                    item.quantity,
+
+                    item.unit,
+
+                    item.unit_price,
+
+                    item.amount,
+
+                    item.delivery_date,
+
+                    "SUCCESS",
+
+                    pdf.name,
+
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+
+                ])
+
+        wb.save(excel)
