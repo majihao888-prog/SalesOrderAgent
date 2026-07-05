@@ -1,18 +1,25 @@
 # Python
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
 
 # Virtual Environment
 .venv/
-venv/
 
-# Logs
-logs/*.log
+# Runtime Data
+inbox/*
+archive/*
+failed/*
+output/*
+logs/*
+temp/*
 
-# Temporary files
-temp/
+# Keep folders
+!inbox/.gitkeep
+!archive/.gitkeep
+!failed/.gitkeep
+!output/.gitkeep
+!logs/.gitkeep
+!temp/.gitkeep
 
 # IDE
 .vscode/
@@ -21,8 +28,3 @@ temp/
 # OS
 .DS_Store
 Thumbs.db
-
-# Output files
-output/
-archive/
-failed/
